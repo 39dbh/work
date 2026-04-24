@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Interval Timer</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; text-align: center; margin: 0; display: flex; flex-direction: column; justify-content: center; height: 100vh; }
+        .setup-area { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .input-group { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+        input { width: 60px; padding: 8px; font-size: 1.2rem; border-radius: 8px; border: none; text-align: center; }
+        #timer-display { display: none; }
+        #status { font-size: 2.5rem; font-weight: bold; margin-bottom: 10px; }
+        #timer { font-size: 10rem; font-weight: bold; font-variant-numeric: tabular-nums; line-height: 1; }
+        #sets-info { font-size: 1.5rem; color: #888; margin-top: 20px; }
+        .work { color: #ff453a; }
+        .rest { color: #32d74b; }
+        button { padding: 15px 50px; font-size: 1.5rem; font-weight: bold; background: #0a84ff; color: white; border: none; border-radius: 12px; cursor: pointer; margin-top: 20px; }
+        button:active { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" class="setup-area">
+        <div class="input-group">Work: <input type="number" id="workInput" value="35"> sec</div>
+        <div class="input-group">Rest: <input type="number" id="restInput" value="10"> sec</div>
+        <div class="input-group">Sets: <input type="number" id="setsInput" value="30"> times</div>
+        <button onclick="initTimer()">START</button>
+    </div>
+
+    <div id="timer-display">
+        <div id="status">READY</div>
+        <div id="timer">0</div>
+        <div id="sets-info">Set: 1 / 1</div>
+        <button onclick="location.reload()" style="background:#555; font-size: 1rem;">RESET</button>
+    </div>
+
+    <script>
+        let workTime, restTime, totalSets;
+        let currentSet = 1;
+        let count = 0;
+        let isWork = true;
+        let timerId = null;
+
+        function initTimer() {
+            // 入力値を取得
+            workTime = parseInt(document.getElementById('workInput').value);
+            restTime = parseInt(document.getElementById('restInput').value);
+            totalSets = parseInt(document.getElementById('setsInput').value);
+
+            // 画面切り替え
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('timer-display').style.display = 'block';
+            
+            count = workTime;
+            updateDisplay();
+            tick();
+        }
+
+        function updateDisplay() {
+            document.getElementById('timer').innerText = count;
+            document.getElementById('status').innerText = isWork ? "WORK" : "REST";
+            document.getElementById('status').className = isWork ? "work" : "rest";
+            document.getElementById('sets-info').innerText = `Set: ${currentSet} / ${totalSets}`;
+        }
+
+        function beep() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = isWork ? 880 : 440; // 切り替え時に音程を変える
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+            osc.stop(ctx.currentTime + 0.5);
+        }
+
+        function tick() {
+            updateDisplay();
+            
+            if (count <= 0) {
+                beep();
+                if (isWork) {
+                    isWork = false;
+                    count = restTime;
+                } else {
+                    isWork = true;
+                    count = workTime;
+                    currentSet++;
+                }
+
+                if (currentSet > totalSets) {
+                    document.getElementById('status').innerText = "FINISH!";
+                    document.getElementById('timer').innerText = "Done";
+                    return;
+                }
+            } else {
+                count--;
+            }
+            timerId = setTimeout(tick, 1000);
+        }
+    </script>
+</body>
+</html>
