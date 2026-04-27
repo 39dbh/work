@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interval Timer</title>
+    <style>
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; display: flex; flex-direction: column; justify-content: center; height: 100vh; margin: 0; }
+        #status { font-size: 2rem; margin-bottom: 10px; }
+        #timer { font-size: 8rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+        #sets { font-size: 1.5rem; color: #888; margin-top: 20px; }
+        .work { color: #ff3b30; }
+        .rest { color: #4cd964; }
+        button { padding: 15px 30px; font-size: 1.2rem; background: #fff; border: none; border-radius: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="status">READY</div>
+    <div id="timer">35</div>
+    <div id="sets">Set: 1 / 30</div>
+    <br>
+    <button onclick="startTimer()">START</button>
+
+    <script>
+        let count = 35;
+        let isWork = true;
+        let currentSet = 1;
+        const totalSets = 30;
+        let timerId = null;
+
+        const timerDisplay = document.getElementById('timer');
+        const statusDisplay = document.getElementById('status');
+        const setsDisplay = document.getElementById('sets');
+
+        function startTimer() {
+            if (timerId) return;
+            document.querySelector('button').style.display = 'none';
+            tick();
+        }
+
+        function tick() {
+            timerDisplay.innerText = count;
+            statusDisplay.innerText = isWork ? "WORK (集中)" : "REST (休憩)";
+            statusDisplay.className = isWork ? "work" : "rest";
+            setsDisplay.innerText = `Set: ${currentSet} / ${totalSets}`;
+
+            if (count <= 0) {
+                // 音を鳴らす（ブラウザの制限により、ユーザー操作後に再生可能）
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                osc.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+
+                if (isWork) {
+                    isWork = false;
+                    count = 10; // 休憩時間
+                } else {
+                    isWork = true;
+                    count = 35; // 集中時間
+                    currentSet++;
+                }
+
+                if (currentSet > totalSets) {
+                    statusDisplay.innerText = "FINISHED!";
+                    return;
+                }
+            }
+
+            count--;
+            timerId = setTimeout(tick, 1000);
+        }
+    </script>
+</body>
+</html>
